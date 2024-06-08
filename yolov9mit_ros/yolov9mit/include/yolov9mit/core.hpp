@@ -142,97 +142,14 @@ protected:
         return objects;
     }
 
-    float intersection_area(const Object &a, const Object &b)
-    {
-        cv::Rect_<float> inter = a.rect & b.rect;
-        return inter.area();
-    }
-
-    void qsort_descent_inplace(std::vector<Object> &faceobjects, int left, int right)
-    {
-        int i = left;
-        int j = right;
-        float p = faceobjects[(left + right) / 2].confidence;
-
-        while (i <= j)
-        {
-            while (faceobjects[i].confidence > p) ++i;
-
-            while (faceobjects[j].confidence < p) --j;
-
-            if (i <= j)
-            {
-                std::swap(faceobjects[i], faceobjects[j]);
-
-                ++i;
-                --j;
-            }
-        }
-        if (left < j) qsort_descent_inplace(faceobjects, left, j);
-        if (i < right) qsort_descent_inplace(faceobjects, i, right);
-    }
-
-    void qsort_descent_inplace(std::vector<Object> &objects)
-    {
-        if (objects.empty()) return;
-
-        qsort_descent_inplace(objects, 0, objects.size() - 1);
-    }
-
-    void nms_sorted_bboxes(const std::vector<Object> &faceobjects, std::vector<int> &picked,
-                           const float nms_threshold)
-    {
-        picked.clear();
-
-        const int n = faceobjects.size();
-
-        std::vector<float> areas(n);
-        for (int i = 0; i < n; ++i)
-        {
-            areas[i] = faceobjects[i].rect.area();
-        }
-
-        for (int i = 0; i < n; ++i)
-        {
-            const Object &a = faceobjects[i];
-            const int picked_size = picked.size();
-
-            int keep = 1;
-            for (int j = 0; j < picked_size; ++j)
-            {
-                const Object &b = faceobjects[picked[j]];
-
-                // intersection over union
-                float inter_area = intersection_area(a, b);
-                float union_area = areas[i] + areas[picked[j]] - inter_area;
-                // float IoU = inter_area / union_area
-                if (inter_area / union_area > nms_threshold) keep = 0;
-            }
-
-            if (keep) picked.push_back(i);
-        }
-    }
-
     std::vector<Object> decode_outputs(const std::vector<float> &prob_classes,
                                        const std::vector<float> &prob_bboxes, const int org_img_w,
                                        const int org_img_h)
     {
-        auto proposals = outputs_to_objects(prob_classes, prob_bboxes, org_img_w, org_img_h);
-        // return proposals;
-
-        qsort_descent_inplace(proposals);
-
-        std::vector<int> picked;
-        nms_sorted_bboxes(proposals, picked, min_iou_);
-
-        const int count = picked.size();
-        std::vector<Object> objects(count);
-
-        for (int i = 0; i < count; ++i)
-        {
-            objects[i] = proposals[picked[i]];
-        }
+        auto objects = outputs_to_objects(prob_classes, prob_bboxes, org_img_w, org_img_h);
         return objects;
+
+        // TODO add nms
     }
 };
 } // namespace yolov9mit
