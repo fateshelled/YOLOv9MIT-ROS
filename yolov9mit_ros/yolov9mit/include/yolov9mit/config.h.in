@@ -1,0 +1,6 @@
+#ifndef _YOLOV9MIT_CONFIG_H_
+#define _YOLOV9MIT_CONFIG_H_
+
+#cmakedefine ENABLE_TENSORRT
+
+#endif

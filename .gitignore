@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+*.onnx
+*.trt
+*.engine
+
+install/
+build/
+log/
