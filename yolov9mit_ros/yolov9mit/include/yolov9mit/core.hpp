@@ -142,14 +142,43 @@ protected:
         return objects;
     }
 
+    std::vector<Object> nms(const std::vector<Object> &objects)
+    {
+        std::vector<Object> results;
+        results.push_back(objects[0]);
+        for (size_t i = 1; i < objects.size(); ++i)
+        {
+            const auto obj = objects[i];
+            const auto obj_area = obj.rect.area();
+            bool keep = true;
+            for (const auto &result : results)
+            {
+                if (obj.class_id != result.class_id) continue;
+                const auto intersect_area = (obj.rect & result.rect).area();
+                const auto union_area = obj_area + result.rect.area() - intersect_area;
+                const auto iou = intersect_area / union_area;
+                if (iou > this->min_iou_)
+                {
+                    keep = false;
+                    break;
+                }
+            }
+            if (keep) results.push_back(obj);
+        }
+        return results;
+    }
+
     std::vector<Object> decode_outputs(const std::vector<float> &prob_classes,
                                        const std::vector<float> &prob_bboxes, const int org_img_w,
                                        const int org_img_h)
     {
         auto objects = outputs_to_objects(prob_classes, prob_bboxes, org_img_w, org_img_h);
-        return objects;
 
-        // TODO add nms
+        std::sort(objects.begin(), objects.end(),
+                  [](const Object &a, const Object &b) { return a.confidence > b.confidence; });
+
+        const auto results = nms(objects);
+        return results;
     }
 };
 } // namespace yolov9mit
