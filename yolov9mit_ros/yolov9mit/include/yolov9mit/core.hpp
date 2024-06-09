@@ -1,7 +1,7 @@
 #ifndef _YOLOV9MIT_CORE_HPP_
 #define _YOLOV9MIT_CORE_HPP_
 
-#include <opencv2/core/types.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace yolov9mit
 {

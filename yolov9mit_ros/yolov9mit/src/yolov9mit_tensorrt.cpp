@@ -1,9 +1,14 @@
 #include "yolov9mit/yolov9mit_tensorrt.hpp"
 
+#include <fstream>
+
+#include "cuda_runtime_api.h"
+#include "yolov9mit/coco_names.hpp"
+
 namespace yolov9mit
 {
 
-static void print_dims(nvinfer1::Dims dims)
+static inline void print_dims(nvinfer1::Dims dims)
 {
     std::cout << "[ ";
     for (int32_t i = 0; i < dims.nbDims; ++i)
@@ -14,7 +19,7 @@ static void print_dims(nvinfer1::Dims dims)
     std::cout << " ]";
 }
 
-static void cuda_check(cudaError_t status)
+static inline void cuda_check(cudaError_t status)
 {
     if (status != 0)
     {
@@ -110,9 +115,7 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, floa
 
 std::vector<Object> YOLOV9MIT_TensorRT::inference(const cv::Mat& frame)
 {
-    // preprocess
     const auto pr_img = preprocess(frame);
-
     const auto input_blob = blobFromImage(pr_img);
 
     // inference
@@ -120,7 +123,8 @@ std::vector<Object> YOLOV9MIT_TensorRT::inference(const cv::Mat& frame)
     std::vector<float> output_blob_bbox;
     this->doInference(input_blob, output_blob_classes, output_blob_bbox);
 
-    auto objects = decode_outputs(output_blob_classes, output_blob_bbox, frame.cols, frame.rows);
+    const auto objects =
+        decode_outputs(output_blob_classes, output_blob_bbox, frame.cols, frame.rows);
 
     return objects;
 }

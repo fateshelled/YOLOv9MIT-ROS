@@ -1,18 +1,12 @@
 #ifndef _YOLOV9MIT_TENSORRT_HPP_
 #define _YOLOV9MIT_TENSORRT_HPP_
 
-#include <fstream>
-#include <iostream>
-#include <iterator>
-#include <memory>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>
 
 #include "NvInfer.h"
-#include "coco_names.hpp"
 #include "core.hpp"
-#include "cuda_runtime_api.h"
 #include "tensorrt_logger.h"
 
 namespace yolov9mit
