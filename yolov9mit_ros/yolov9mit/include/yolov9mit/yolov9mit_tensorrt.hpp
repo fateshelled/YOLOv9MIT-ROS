@@ -21,8 +21,7 @@ public:
     std::vector<Object> inference(const cv::Mat &frame) override;
 
 private:
-    void doInference(std::vector<float> input, std::vector<float> &output0,
-                     std::vector<float> &output1);
+    void doInference(std::vector<float> &output0, std::vector<float> &output1);
 
     int32_t device_ = 0;
     MyTRTLogger trt_logger_;

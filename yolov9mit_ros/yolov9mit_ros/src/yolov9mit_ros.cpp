@@ -96,16 +96,17 @@ void YOLOV9MIT_Node::image_callback(const sensor_msgs::msg::Image::ConstSharedPt
 
     // time log
     {
+        RCLCPP_INFO(this->get_logger(), "Elapsed");
         auto inf_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1_inf - t0_inf);
-        RCLCPP_INFO(this->get_logger(), "Inference: %ld ms", inf_elapsed.count());
+        RCLCPP_INFO(this->get_logger(), " - Inference: %ld ms", inf_elapsed.count());
 
         auto bboxes_elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(t1_bboxes - t0_bboxes);
-        RCLCPP_INFO(this->get_logger(), "to Detection2DArray: %ld ms", bboxes_elapsed.count());
+        RCLCPP_INFO(this->get_logger(), " - to Detection2DArray: %ld ms", bboxes_elapsed.count());
 
         auto draw_elapsed =
             std::chrono::duration_cast<std::chrono::milliseconds>(t1_draw - t0_draw);
-        RCLCPP_INFO(this->get_logger(), "Draw objects: %ld ms", draw_elapsed.count());
+        RCLCPP_INFO(this->get_logger(), " - Draw objects: %ld ms", draw_elapsed.count());
 
         RCLCPP_INFO(this->get_logger(), "Detections: %ld count", objects.size());
         RCLCPP_INFO(this->get_logger(), " ");

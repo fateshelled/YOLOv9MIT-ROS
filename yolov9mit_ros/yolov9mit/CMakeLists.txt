@@ -14,7 +14,7 @@ endif()
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
-option(YOLOV9_MIT_USE_TENSORRT    "Use TensorRT"  ON)
+option(YOLOV9_MIT_USE_TENSORRT  "Use TensorRT"  ON)
 
 set(ENABLE_TENSORRT OFF)
 

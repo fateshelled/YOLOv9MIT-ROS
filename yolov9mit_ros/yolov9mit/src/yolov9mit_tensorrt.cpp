@@ -115,13 +115,16 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, floa
 
 std::vector<Object> YOLOV9MIT_TensorRT::inference(const cv::Mat& frame)
 {
+    // preprocess
     const auto pr_img = preprocess(frame);
-    const auto input_blob = blobFromImage(pr_img);
+
+    // HWC -> NCHW
+    blobFromImage(pr_img);
 
     // inference
     std::vector<float> output_blob_classes;
     std::vector<float> output_blob_bbox;
-    this->doInference(input_blob, output_blob_classes, output_blob_bbox);
+    this->doInference(output_blob_classes, output_blob_bbox);
 
     const auto objects =
         decode_outputs(output_blob_classes, output_blob_bbox, frame.cols, frame.rows);
@@ -129,8 +132,7 @@ std::vector<Object> YOLOV9MIT_TensorRT::inference(const cv::Mat& frame)
     return objects;
 }
 
-void YOLOV9MIT_TensorRT::doInference(std::vector<float> input, std::vector<float>& output0,
-                                     std::vector<float>& output1)
+void YOLOV9MIT_TensorRT::doInference(std::vector<float>& output0, std::vector<float>& output1)
 {
     void* buffers[3];
     output0.resize(this->output0_size_);
@@ -146,7 +148,7 @@ void YOLOV9MIT_TensorRT::doInference(std::vector<float> input, std::vector<float
     cuda_check(cudaStreamCreate(&stream));
 
     // cudaMemcpyAsync(dist, src, size, type, stream)
-    cuda_check(cudaMemcpyAsync(buffers[this->input_index_], input.data(),
+    cuda_check(cudaMemcpyAsync(buffers[this->input_index_], blob_data_.data(),
                                3 * this->input_h_ * this->input_w_ * sizeof(float),
                                cudaMemcpyHostToDevice, stream));
     context_->enqueueV2(buffers, stream, nullptr);

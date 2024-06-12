@@ -12,7 +12,7 @@ namespace yolov9mit
 
 struct Object
 {
-    cv::Rect_<float> rect;
+    cv::Rect2f rect;
     int class_id;
     float confidence;
 };
@@ -30,9 +30,12 @@ public:
 protected:
     size_t input_w_;
     size_t input_h_;
+    const size_t input_channel_ = 3;
     float min_iou_;
     float min_confidence_;
     size_t num_classes_;
+    const float blob_scale = 1.0f / 255.0f;
+    std::vector<float> blob_data_;
 
     cv::Mat preprocess(const cv::Mat &img)
     {
@@ -43,48 +46,27 @@ protected:
     }
 
     // HWC -> NCHW
-    std::vector<float> blobFromImage(const cv::Mat &img)
+    void blobFromImage(const cv::Mat &img)
     {
-        static const float scale = 1.0f / 255.0f;
-        static const size_t channels = 3;
-        const size_t img_h = img.rows;
-        const size_t img_w = img.cols;
-        std::vector<float> blob_data(channels * img_h * img_w);
+        const size_t input_size = input_channel_ * input_h_ * input_w_;
+        blob_data_.resize(input_size);
 
-        for (size_t c = 0; c < channels; ++c)
+        // (input_h_, input_w_, input_channel_) -> (input_h_ * input_w_ * input_channel_)
+        cv::Mat flatten = img.reshape(1, 1);
+        std::vector<float> img_vec;
+        flatten.convertTo(img_vec, CV_32FC1, blob_scale);
+
+        // img_vec = [r0, g0, b0, r1, g1, b1, ... ]
+        // blob_data_ = [r0, r1, ..., g0, g1, ..., b0, b1, ... ]
+        float *blob_ptr = blob_data_.data();
+        float *img_vec_ptr = img_vec.data();
+        for (size_t c = 0; c < input_channel_; ++c)
         {
-            const size_t chw = c * img_w * img_h;
-            for (size_t h = 0; h < img_h; ++h)
+            for (size_t i = c; i < input_size; i += 3)
             {
-                const size_t chw_hh = chw + h * img_w;
-                for (size_t w = 0; w < img_w; ++w)
-                {
-                    // blob_data[c * img_w * img_h + h * img_w + w] =
-                    //     (float)img.ptr<cv::Vec3b>(h)[w][c] * scale;
-                    blob_data[chw_hh + w] = (float)img.ptr<cv::Vec3b>(h)[w][c] * scale;
-                }
+                *blob_ptr++ = img_vec_ptr[i];
             }
         }
-        return blob_data;
-    }
-
-    // HWC -> NHWC
-    std::vector<float> blobFromImage_nhwc(const cv::Mat &img)
-    {
-        static const float scale = 1.0f / 255.0f;
-        static const size_t channels = 3;
-        const size_t img_hw = img.rows * img.cols;
-
-        std::vector<float> blob_data(channels * img_hw);
-
-        for (size_t i = 0; i < img_hw; ++i)
-        {
-            for (size_t c = 0; c < channels; ++c)
-            {
-                blob_data[i * channels + c] = (float)img.data[i * channels + c] * scale;
-            }
-        }
-        return blob_data;
     }
 
     std::vector<Object> outputs_to_objects(const std::vector<float> &prob_classes,
