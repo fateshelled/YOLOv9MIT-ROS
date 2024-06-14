@@ -21,11 +21,14 @@ class AbcYOLOV9MIT
 {
 public:
     AbcYOLOV9MIT() {}
-    AbcYOLOV9MIT(float min_iou = 0.45, float min_confidence = 0.3, size_t num_classes = 80)
+    AbcYOLOV9MIT(float min_iou = 0.45f, float min_confidence = 0.6f, size_t num_classes = 80)
         : min_iou_(min_iou), min_confidence_(min_confidence), num_classes_(num_classes)
     {
     }
     virtual std::vector<Object> inference(const cv::Mat &frame) = 0;
+
+private:
+    inline float sigmoid(const float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
 protected:
     size_t input_w_;
@@ -90,6 +93,7 @@ protected:
 
             for (size_t class_idx = 0; class_idx < num_classes_; ++class_idx)
             {
+                // const float conf = sigmoid(prob_classes[idx + class_idx]);
                 const float conf = prob_classes[idx + class_idx];
                 if (conf > max_confidence)
                 {

@@ -16,7 +16,7 @@ YOLOV9MIT_Node::YOLOV9MIT_Node(const rclcpp::NodeOptions &options) : Node("yolov
     const auto model_path =
         this->declare_parameter(param_prefix + "model_path", "yolov9mit_with_post.sim.engine");
     const auto min_iou = this->declare_parameter(param_prefix + "min_iou", 0.5f);
-    const auto min_confidence = this->declare_parameter(param_prefix + "min_confidence", 0.5f);
+    const auto min_confidence = this->declare_parameter(param_prefix + "min_confidence", 0.6f);
     const auto class_label_path = this->declare_parameter(param_prefix + "class_label_path", "");
     const auto model_type = this->declare_parameter(param_prefix + "model_type", "tensorrt");
     const auto tensorrt_device = this->declare_parameter(param_prefix + "tensorrt_device", 0);
