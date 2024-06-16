@@ -13,10 +13,10 @@ namespace yolov9mit
 struct Object
 {
     cv::Rect2f rect;
-    int class_id;
+    int32_t class_id;
     float confidence;
 
-    Object(const cv::Rect2f &rect_, const int class_id_, const float confidence_)
+    Object(const cv::Rect2f &rect_, const int32_t class_id_, const float confidence_)
         : rect(rect_), class_id(class_id_), confidence(confidence_)
     {
     }
@@ -36,9 +36,9 @@ private:
     inline float sigmoid(const float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
 protected:
-    size_t input_w_;
-    size_t input_h_;
-    const size_t input_channel_ = 3;
+    int32_t input_w_;
+    int32_t input_h_;
+    const int32_t input_channel_ = 3;
     float min_iou_;
     float min_confidence_;
     size_t num_classes_;
@@ -56,8 +56,8 @@ protected:
     // HWC -> NCHW
     void blobFromImage(const cv::Mat &img)
     {
-        const size_t input_size = input_channel_ * input_h_ * input_w_;
-        if (blob_data_.size() != input_size)
+        const int32_t input_size = input_channel_ * input_h_ * input_w_;
+        if (blob_data_.size() != (size_t)input_size)
         {
             blob_data_.resize(input_size);
         }
@@ -71,9 +71,9 @@ protected:
         // blob_data_ = [r0, r1, ..., g0, g1, ..., b0, b1, ... ]
         float *blob_ptr = blob_data_.data();
         float *img_vec_ptr = img_vec.data();
-        for (size_t c = 0; c < input_channel_; ++c)
+        for (int32_t c = 0; c < input_channel_; ++c)
         {
-            for (size_t i = c; i < input_size; i += 3)
+            for (int32_t i = c; i < input_size; i += 3)
             {
                 *blob_ptr++ = img_vec_ptr[i];
             }
@@ -87,7 +87,7 @@ protected:
 
     std::vector<Object> outputs_to_objects(const std::vector<float> &prob_classes,
                                            const std::vector<float> &prob_bboxes,
-                                           const int org_img_w, const int org_img_h)
+                                           const int32_t org_img_w, const int32_t org_img_h)
     {
         std::vector<Object> objects;
 
@@ -101,7 +101,7 @@ protected:
         for (size_t i = 0; i < length; ++i)
         {
             const size_t idx = i * num_classes_;
-            int class_id = -1;
+            int32_t class_id = -1;
             float max_confidence = -1.0;
 
             for (size_t class_idx = 0; class_idx < num_classes_; ++class_idx)
@@ -162,8 +162,8 @@ protected:
     }
 
     std::vector<Object> decode_outputs(const std::vector<float> &prob_classes,
-                                       const std::vector<float> &prob_bboxes, const int org_img_w,
-                                       const int org_img_h)
+                                       const std::vector<float> &prob_bboxes,
+                                       const int32_t org_img_w, const int32_t org_img_h)
     {
         auto objects = outputs_to_objects(prob_classes, prob_bboxes, org_img_w, org_img_h);
         if (objects.size() == 0)

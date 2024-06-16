@@ -23,12 +23,11 @@ static inline void cuda_check(cudaError_t status)
 {
     if (status != 0)
     {
-        std::cerr << "Cuda Error: " << status << std::endl;
-        abort();
+        std::runtime_error(cudaGetErrorString(status));
     }
 }
 
-YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, float min_iou,
+YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int32_t device, float min_iou,
                                        float min_confidence, size_t num_classes)
     : AbcYOLOV9MIT(min_iou, min_confidence, num_classes), device_(device)
 {
@@ -71,22 +70,20 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, floa
     assert(this->engine_->getTensorDataType(output0_name) == nvinfer1::DataType::kFLOAT);
     assert(this->engine_->getTensorDataType(output1_name) == nvinfer1::DataType::kFLOAT);
 
-    {
-        const auto input_dims = this->engine_->getTensorShape(input_name);
-        this->input_h_ = input_dims.d[2];
-        this->input_w_ = input_dims.d[3];
+    const auto input_dims = this->engine_->getTensorShape(input_name);
+    this->input_h_ = input_dims.d[2];
+    this->input_w_ = input_dims.d[3];
 
-        std::cout << "MODEL Input:" << std::endl;
-        std::cout << "  name:  " << input_name << std::endl;
-        std::cout << "  shape: ";
-        print_dims(input_dims);
-        std::cout << std::endl;
-    }
+    std::cout << "MODEL Input:" << std::endl;
+    std::cout << "  name:  " << input_name << std::endl;
+    std::cout << "  shape: ";
+    print_dims(input_dims);
+    std::cout << std::endl;
 
     {
         auto output0_dims = this->engine_->getTensorShape(output0_name);
         this->output0_size_ = 1;
-        for (int j = 0; j < output0_dims.nbDims; ++j)
+        for (int32_t j = 0; j < output0_dims.nbDims; ++j)
         {
             this->output0_size_ *= output0_dims.d[j];
         }
@@ -100,7 +97,7 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, floa
     {
         auto output1_dims = this->engine_->getTensorShape(output1_name);
         this->output1_size_ = 1;
-        for (int j = 0; j < output1_dims.nbDims; ++j)
+        for (int32_t j = 0; j < output1_dims.nbDims; ++j)
         {
             this->output1_size_ *= output1_dims.d[j];
         }
@@ -123,6 +120,15 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, floa
     // Create output data buffer
     output_blob_classes_.resize(output0_size_);
     output_blob_bbox_.resize(output1_size_);
+
+    // set Input Shape
+    assert(context_->setInputShape(input_name, input_dims));
+    assert(context_->allInputDimensionsSpecified());
+
+    // set buffer ptr address
+    assert(context_->setTensorAddress(input_name, inference_buffers_[0]));
+    assert(context_->setTensorAddress(output0_name, inference_buffers_[1]));
+    assert(context_->setTensorAddress(output1_name, inference_buffers_[2]));
 }
 
 YOLOV9MIT_TensorRT::~YOLOV9MIT_TensorRT()
@@ -159,8 +165,8 @@ void YOLOV9MIT_TensorRT::doInference(std::vector<float>& output0, std::vector<fl
                                3 * this->input_h_ * this->input_w_ * sizeof(float),
                                cudaMemcpyHostToDevice, stream));
 
-    context_->enqueueV2(inference_buffers_, stream, nullptr);
-    // context_->enqueueV3(stream);
+    bool status = context_->enqueueV3(stream);
+    if (!status) throw std::runtime_error("failed inference");
 
     cuda_check(cudaMemcpyAsync(output0.data(), inference_buffers_[this->output0_index_],
                                this->output0_size_ * sizeof(float), cudaMemcpyDeviceToHost,
@@ -169,9 +175,8 @@ void YOLOV9MIT_TensorRT::doInference(std::vector<float>& output0, std::vector<fl
                                this->output1_size_ * sizeof(float), cudaMemcpyDeviceToHost,
                                stream));
 
-    cudaStreamSynchronize(stream);
-
-    cudaStreamDestroy(stream);
+    cuda_check(cudaStreamSynchronize(stream));
+    cuda_check(cudaStreamDestroy(stream));
 }
 
 } // namespace yolov9mit

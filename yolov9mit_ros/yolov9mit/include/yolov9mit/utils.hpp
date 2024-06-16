@@ -37,7 +37,7 @@ inline void draw_objects(cv::Mat bgr_image, const std::vector<Object>& objects,
     const size_t COLOR_NUM = COLOR_LIST.size();
     for (const auto& obj : objects)
     {
-        const int idx = obj.class_id % COLOR_NUM;
+        const int32_t idx = obj.class_id % COLOR_NUM;
         const cv::Scalar color =
             cv::Scalar(COLOR_LIST[idx].b, COLOR_LIST[idx].g, COLOR_LIST[idx].r);
         const cv::Scalar txt_color =
@@ -46,14 +46,14 @@ inline void draw_objects(cv::Mat bgr_image, const std::vector<Object>& objects,
         char text[256];
         sprintf(text, "%s %.1f%%", class_names[obj.class_id].c_str(), obj.confidence * 100);
 
-        int baseLine = 0;
+        int32_t baseLine = 0;
         const cv::Size label_size =
             cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.4, 1, &baseLine);
 
         const cv::Scalar txt_bg_color = color * 0.7;
 
-        int x = obj.rect.x;
-        int y = obj.rect.y + 1;
+        int32_t x = obj.rect.x;
+        int32_t y = obj.rect.y + 1;
         if (y > bgr_image.rows) y = bgr_image.rows;
 
         cv::rectangle(bgr_image, obj.rect, color, 2);
