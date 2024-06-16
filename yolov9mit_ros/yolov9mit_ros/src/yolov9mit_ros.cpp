@@ -97,16 +97,19 @@ void YOLOV9MIT_Node::image_callback(const sensor_msgs::msg::Image::ConstSharedPt
     // time log
     {
         RCLCPP_INFO(this->get_logger(), "Elapsed");
-        auto inf_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1_inf - t0_inf);
-        RCLCPP_INFO(this->get_logger(), " - Inference: %ld ms", inf_elapsed.count());
+        auto inf_elapsed = std::chrono::duration_cast<std::chrono::microseconds>(t1_inf - t0_inf);
+        RCLCPP_INFO(this->get_logger(), " - Inference: %.3f ms",
+                    (float)inf_elapsed.count() * 0.001);
 
         auto bboxes_elapsed =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t1_bboxes - t0_bboxes);
-        RCLCPP_INFO(this->get_logger(), " - to Detection2DArray: %ld ms", bboxes_elapsed.count());
+            std::chrono::duration_cast<std::chrono::microseconds>(t1_bboxes - t0_bboxes);
+        RCLCPP_INFO(this->get_logger(), " - to Detection2DArray: %.3f ms",
+                    (float)bboxes_elapsed.count() * 0.001);
 
         auto draw_elapsed =
-            std::chrono::duration_cast<std::chrono::milliseconds>(t1_draw - t0_draw);
-        RCLCPP_INFO(this->get_logger(), " - Draw objects: %ld ms", draw_elapsed.count());
+            std::chrono::duration_cast<std::chrono::microseconds>(t1_draw - t0_draw);
+        RCLCPP_INFO(this->get_logger(), " - Draw objects: %.3f ms",
+                    (float)draw_elapsed.count() * 0.001);
 
         RCLCPP_INFO(this->get_logger(), "Detections: %ld count", objects.size());
         RCLCPP_INFO(this->get_logger(), " ");

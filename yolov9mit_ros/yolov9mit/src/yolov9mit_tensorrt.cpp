@@ -111,6 +111,25 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int device, floa
         std::cout << std::endl;
     }
     std::cout << std::endl;
+
+    // Create GPU buffers on device
+    cuda_check(cudaMalloc(&inference_buffers_[this->input_index_],
+                          this->input_channel_ * this->input_h_ * this->input_w_ * sizeof(float)));
+    cuda_check(
+        cudaMalloc(&inference_buffers_[this->output0_index_], this->output0_size_ * sizeof(float)));
+    cuda_check(
+        cudaMalloc(&inference_buffers_[this->output1_index_], this->output1_size_ * sizeof(float)));
+
+    // Create output data buffer
+    output_blob_classes_.resize(output0_size_);
+    output_blob_bbox_.resize(output1_size_);
+}
+
+YOLOV9MIT_TensorRT::~YOLOV9MIT_TensorRT()
+{
+    cuda_check(cudaFree(inference_buffers_[0]));
+    cuda_check(cudaFree(inference_buffers_[1]));
+    cuda_check(cudaFree(inference_buffers_[2]));
 }
 
 std::vector<Object> YOLOV9MIT_TensorRT::inference(const cv::Mat& frame)
@@ -122,50 +141,37 @@ std::vector<Object> YOLOV9MIT_TensorRT::inference(const cv::Mat& frame)
     blobFromImage(pr_img);
 
     // inference
-    std::vector<float> output_blob_classes;
-    std::vector<float> output_blob_bbox;
-    this->doInference(output_blob_classes, output_blob_bbox);
+    this->doInference(output_blob_classes_, output_blob_bbox_);
 
     const auto objects =
-        decode_outputs(output_blob_classes, output_blob_bbox, frame.cols, frame.rows);
+        decode_outputs(output_blob_classes_, output_blob_bbox_, frame.cols, frame.rows);
 
     return objects;
 }
 
 void YOLOV9MIT_TensorRT::doInference(std::vector<float>& output0, std::vector<float>& output1)
 {
-    void* buffers[3];
-    output0.resize(this->output0_size_);
-    output1.resize(this->output1_size_);
-
-    // Create GPU buffers on device
-    cuda_check(cudaMalloc(&buffers[this->input_index_],
-                          3 * this->input_h_ * this->input_w_ * sizeof(float)));
-    cuda_check(cudaMalloc(&buffers[this->output0_index_], this->output0_size_ * sizeof(float)));
-    cuda_check(cudaMalloc(&buffers[this->output1_index_], this->output1_size_ * sizeof(float)));
-
     cudaStream_t stream;
     cuda_check(cudaStreamCreate(&stream));
 
     // cudaMemcpyAsync(dist, src, size, type, stream)
-    cuda_check(cudaMemcpyAsync(buffers[this->input_index_], blob_data_.data(),
+    cuda_check(cudaMemcpyAsync(inference_buffers_[this->input_index_], blob_data_.data(),
                                3 * this->input_h_ * this->input_w_ * sizeof(float),
                                cudaMemcpyHostToDevice, stream));
-    context_->enqueueV2(buffers, stream, nullptr);
+
+    context_->enqueueV2(inference_buffers_, stream, nullptr);
     // context_->enqueueV3(stream);
-    cuda_check(cudaMemcpyAsync(output0.data(), buffers[this->output0_index_],
+
+    cuda_check(cudaMemcpyAsync(output0.data(), inference_buffers_[this->output0_index_],
                                this->output0_size_ * sizeof(float), cudaMemcpyDeviceToHost,
                                stream));
-    cuda_check(cudaMemcpyAsync(output1.data(), buffers[this->output1_index_],
+    cuda_check(cudaMemcpyAsync(output1.data(), inference_buffers_[this->output1_index_],
                                this->output1_size_ * sizeof(float), cudaMemcpyDeviceToHost,
                                stream));
+
     cudaStreamSynchronize(stream);
 
-    // Release stream and buffers
     cudaStreamDestroy(stream);
-    cuda_check(cudaFree(buffers[0]));
-    cuda_check(cudaFree(buffers[1]));
-    cuda_check(cudaFree(buffers[2]));
 }
 
 } // namespace yolov9mit

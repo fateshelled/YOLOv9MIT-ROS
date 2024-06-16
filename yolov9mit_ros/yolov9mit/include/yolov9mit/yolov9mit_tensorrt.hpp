@@ -18,6 +18,7 @@ class YOLOV9MIT_TensorRT : public AbcYOLOV9MIT
 public:
     YOLOV9MIT_TensorRT(file_name_t engine_path, int32_t device = 0, float min_iou = 0.5f,
                        float min_confidence = 0.5f, size_t num_classes = 80);
+    ~YOLOV9MIT_TensorRT();
     std::vector<Object> inference(const cv::Mat &frame) override;
 
 private:
@@ -33,6 +34,9 @@ private:
     const int32_t input_index_ = 0;
     const int32_t output0_index_ = 1;
     const int32_t output1_index_ = 2;
+    void *inference_buffers_[3];
+    std::vector<float> output_blob_classes_;
+    std::vector<float> output_blob_bbox_;
 };
 } // namespace yolov9mit
 

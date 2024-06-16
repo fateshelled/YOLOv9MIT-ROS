@@ -15,6 +15,11 @@ struct Object
     cv::Rect2f rect;
     int class_id;
     float confidence;
+
+    Object(const cv::Rect2f &rect_, const int class_id_, const float confidence_)
+        : rect(rect_), class_id(class_id_), confidence(confidence_)
+    {
+    }
 };
 
 class AbcYOLOV9MIT
@@ -37,7 +42,7 @@ protected:
     float min_iou_;
     float min_confidence_;
     size_t num_classes_;
-    const float blob_scale = 1.0f / 255.0f;
+    const float blob_scale_ = 1.0f / 255.0f;
     std::vector<float> blob_data_;
 
     cv::Mat preprocess(const cv::Mat &img)
@@ -52,12 +57,15 @@ protected:
     void blobFromImage(const cv::Mat &img)
     {
         const size_t input_size = input_channel_ * input_h_ * input_w_;
-        blob_data_.resize(input_size);
+        if (blob_data_.size() != input_size)
+        {
+            blob_data_.resize(input_size);
+        }
 
         // (input_h_, input_w_, input_channel_) -> (input_h_ * input_w_ * input_channel_)
         cv::Mat flatten = img.reshape(1, 1);
         std::vector<float> img_vec;
-        flatten.convertTo(img_vec, CV_32FC1, blob_scale);
+        flatten.convertTo(img_vec, CV_32FC1, blob_scale_);
 
         // img_vec = [r0, g0, b0, r1, g1, b1, ... ]
         // blob_data_ = [r0, r1, ..., g0, g1, ..., b0, b1, ... ]
@@ -70,6 +78,11 @@ protected:
                 *blob_ptr++ = img_vec_ptr[i];
             }
         }
+
+        // // Too slow
+        // cv::dnn::blobFromImage(img, 1.0, img.size())
+        //     .reshape(1, 1)
+        //     .convertTo(blob_data_, CV_32FC1, blob_scale_);
     }
 
     std::vector<Object> outputs_to_objects(const std::vector<float> &prob_classes,
@@ -115,14 +128,8 @@ protected:
                 x1 = std::max(std::min(x1, x_max), 0.f);
                 y1 = std::max(std::min(y1, y_max), 0.f);
 
-                Object obj;
-                obj.rect.x = x0;
-                obj.rect.y = y0;
-                obj.rect.width = x1 - x0;
-                obj.rect.height = y1 - y0;
-                obj.class_id = class_id;
-                obj.confidence = max_confidence;
-                objects.push_back(obj);
+                objects.emplace_back(cv::Rect2f(x0, y0, x1 - x0, y1 - y0), class_id,
+                                     max_confidence);
             }
         }
         return objects;
@@ -159,6 +166,10 @@ protected:
                                        const int org_img_h)
     {
         auto objects = outputs_to_objects(prob_classes, prob_bboxes, org_img_w, org_img_h);
+        if (objects.size() == 0)
+        {
+            return {};
+        }
 
         std::sort(objects.begin(), objects.end(),
                   [](const Object &a, const Object &b) { return a.confidence > b.confidence; });
