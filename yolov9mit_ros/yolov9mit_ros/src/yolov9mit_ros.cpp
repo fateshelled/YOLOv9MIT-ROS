@@ -1,6 +1,5 @@
 #include "yolov9mit_ros/yolov9mit_ros.hpp"
 
-#include <ament_index_cpp/get_package_share_directory.hpp>
 #include <filesystem>
 #include <opencv2/opencv.hpp>
 #include <vision_msgs/msg/detection2_d.hpp>
@@ -18,9 +17,7 @@ YOLOV9MIT_Node::YOLOV9MIT_Node(const rclcpp::NodeOptions &options) : Node("yolov
     const auto model_path = this->declare_parameter("model_path", "v9-s.vec2box.sim.engine");
     const auto min_iou = this->declare_parameter("min_iou", 0.5f);
     const auto min_confidence = this->declare_parameter("min_confidence", 0.5f);
-    const auto class_label_path = this->declare_parameter(
-        "class_label_path",
-        ament_index_cpp::get_package_share_directory("yolov9mit_ros") + "/labels/coco_names.txt");
+    const auto class_label_path = this->declare_parameter("class_label_path", "");
     const auto model_type = this->declare_parameter("model_type", "tensorrt");
     const auto tensorrt_device = this->declare_parameter("tensorrt_device", 0);
     const auto input_image_topic = this->declare_parameter("input_image_topic", "image_raw");
@@ -30,8 +27,34 @@ YOLOV9MIT_Node::YOLOV9MIT_Node(const rclcpp::NodeOptions &options) : Node("yolov
         this->declare_parameter("output_boundingbox_topic", "yolov9mit_ros/detections");
     this->imshow_ = this->declare_parameter("imshow", false);
 
+    {
+        RCLCPP_INFO(this->get_logger(), "Params: ");
+        RCLCPP_INFO(this->get_logger(), " - model_path: %s", model_path.c_str());
+        RCLCPP_INFO(this->get_logger(), " - min_iou: %f", min_iou);
+        RCLCPP_INFO(this->get_logger(), " - min_confidence: %f", min_confidence);
+        RCLCPP_INFO(this->get_logger(), " - class_label_path: %s", class_label_path.c_str());
+        RCLCPP_INFO(this->get_logger(), " - model_type: %s", model_type.c_str());
+        RCLCPP_INFO(this->get_logger(), " - tensorrt_device: %ld", tensorrt_device);
+        RCLCPP_INFO(this->get_logger(), " - input_image_topic: %s", input_image_topic.c_str());
+        RCLCPP_INFO(this->get_logger(), " - output_image_topic: %s", output_image_topic.c_str());
+        RCLCPP_INFO(this->get_logger(), " - output_boundingbox_topic: %s",
+                    output_boundingbox_topic.c_str());
+        RCLCPP_INFO(this->get_logger(), " - imshow: %s", imshow_ ? "true" : "false");
+    }
+
     // initialize pub/sub
     {
+        if (model_path == "")
+        {
+            std::string msg = "model_path is not set.";
+            throw std::runtime_error(msg);
+        }
+        if (!std::filesystem::exists(model_path))
+        {
+            std::string msg = "model_path[" + model_path + "] is not exist.";
+            throw std::runtime_error(msg);
+        }
+
         if (class_label_path == "")
         {
             std::string msg = "class_label_path is not set.";
@@ -42,6 +65,7 @@ YOLOV9MIT_Node::YOLOV9MIT_Node(const rclcpp::NodeOptions &options) : Node("yolov
             std::string msg = "class_label_path[" + class_label_path + "] is not exist.";
             throw std::runtime_error(msg);
         }
+
         this->class_names_ = yolov9mit::utils::read_class_labels(class_label_path);
 
         this->pub_bboxes_ = this->create_publisher<vision_msgs::msg::Detection2DArray>(
@@ -123,6 +147,12 @@ void YOLOV9MIT_Node::image_callback(const sensor_msgs::msg::Image::ConstSharedPt
     if (this->imshow_)
     {
         cv::imshow(this->window_name_, image);
+        const auto key = cv::waitKey(1);
+        if (key == 113)
+        {
+            cv::destroyWindow(this->window_name_);
+            rclcpp::shutdown();
+        }
     }
 }
 

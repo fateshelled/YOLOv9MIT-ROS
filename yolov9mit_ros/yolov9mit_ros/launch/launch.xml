@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <arg name="model_path" default="v9-s.vec2box.sim.engine" description=""/>
+    <arg name="min_iou" default="0.5" description=""/>
+    <arg name="min_confidence" default="0.5" description=""/>
+    <arg name="class_label_path" default="$(find-pkg-share yolov9mit_ros)/labels/coco_names.txt" description=""/>
+    <arg name="model_type" default="tensorrt" description=""/>
+    <arg name="tensorrt_device" default="0" description=""/>
+    <arg name="input_image_topic" default="image_raw" description=""/>
+    <arg name="output_image_topic" default="yolov9mit_ros/image_raw" description=""/>
+    <arg name="output_boundingbox_topic" default="yolov9mit_ros/detections" description=""/>
+    <arg name="imshow" default="False" description=""/>
+    <node pkg="yolov9mit_ros" exec="yolov9mit_ros_node" name="yolov9mit_ros_node" output="screen">
+        <param name="model_path" value="$(var model_path)" />
+        <param name="min_iou" value="$(var min_iou)" />
+        <param name="min_confidence" value="$(var min_confidence)" />
+        <param name="class_label_path" value="$(var class_label_path)" />
+        <param name="model_type" value="$(var model_type)" />
+        <param name="tensorrt_device" value="$(var tensorrt_device)" />
+        <param name="model_painput_image_topicth" value="$(var input_image_topic)" />
+        <param name="output_image_topic" value="$(var output_image_topic)" />
+        <param name="output_boundingbox_topic" value="$(var output_boundingbox_topic)" />
+        <param name="imshow" value="$(var imshow)" />
+    </node>
+
+    <arg name="video_device" default="/dev/video0" description="input video device"/>
+    <arg name="image_size" default="[1280, 720]" description="image size"/>
+    <node pkg="v4l2_camera" exec="v4l2_camera_node" name="v4l2_camera_node" output="screen">
+        <param name="video_device" value="$(var video_device)" />
+        <param name="image_size" value="$(var image_size)" />
+    </node>
+
+</launch>

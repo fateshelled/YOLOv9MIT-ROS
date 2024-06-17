@@ -106,8 +106,8 @@ protected:
 
             for (size_t class_idx = 0; class_idx < num_classes_; ++class_idx)
             {
-                // const float conf = sigmoid(prob_classes[idx + class_idx]);
-                const float conf = prob_classes[idx + class_idx];
+                const float conf = sigmoid(prob_classes[idx + class_idx]);
+                // const float conf = prob_classes[idx + class_idx];
                 if (conf > max_confidence)
                 {
                     class_id = class_idx;
