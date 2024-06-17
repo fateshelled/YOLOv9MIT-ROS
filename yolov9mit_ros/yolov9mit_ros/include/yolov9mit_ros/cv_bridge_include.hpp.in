@@ -1,0 +1,20 @@
+#pragma once
+
+#cmakedefine cv_bridge_VERSION_MAJOR @cv_bridge_VERSION_MAJOR@
+#cmakedefine cv_bridge_VERSION_MINOR @cv_bridge_VERSION_MINOR@
+#cmakedefine cv_bridge_VERSION_PATCH @cv_bridge_VERSION_PATCH@
+
+#define cv_bridge_VERSION_GTE(major, minor, patch) \
+    ((major < cv_bridge_VERSION_MAJOR)   ? true    \
+     : (major > cv_bridge_VERSION_MAJOR) ? false   \
+     : (minor < cv_bridge_VERSION_MINOR) ? true    \
+     : (minor > cv_bridge_VERSION_MINOR) ? false   \
+     : (patch < cv_bridge_VERSION_PATCH) ? true    \
+     : (patch > cv_bridge_VERSION_PATCH) ? false   \
+                                         : true)
+
+#if cv_bridge_VERSION_GTE(3, 4, 0)
+#include <cv_bridge/cv_bridge.hpp>
+#else
+#include <cv_bridge/cv_bridge.h>
+#endif

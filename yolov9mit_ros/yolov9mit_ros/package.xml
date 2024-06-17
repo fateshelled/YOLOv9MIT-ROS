@@ -16,7 +16,6 @@
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
   <depend>std_msgs</depend>
-  <depend>sensor_msgs</depend>
   <depend>vision_msgs</depend>
   <depend>yolov9mit</depend>
 

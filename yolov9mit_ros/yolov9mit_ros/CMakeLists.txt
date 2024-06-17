@@ -28,6 +28,12 @@ rclcpp_components_register_node(
   EXECUTABLE yolov9mit_ros_node
 )
 
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/yolov9mit_ros/cv_bridge_include.hpp.in"
+  "${PROJECT_SOURCE_DIR}/include/yolov9mit_ros/cv_bridge_include.hpp"
+  @ONLY
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
