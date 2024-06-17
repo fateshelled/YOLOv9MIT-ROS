@@ -3,7 +3,6 @@
 #include <fstream>
 
 #include "cuda_runtime_api.h"
-#include "yolov9mit/coco_names.hpp"
 
 namespace yolov9mit
 {

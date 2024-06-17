@@ -1,10 +1,13 @@
 #include "yolov9mit_ros/yolov9mit_ros.hpp"
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <filesystem>
 #include <opencv2/opencv.hpp>
 #include <vision_msgs/msg/detection2_d.hpp>
 #include <vision_msgs/msg/object_hypothesis_with_pose.hpp>
 
 #include "yolov9mit/utils.hpp"
+#include "yolov9mit_ros/cv_bridge_include.hpp"
 
 namespace yolov9mit_ros
 {
@@ -12,32 +15,34 @@ namespace yolov9mit_ros
 YOLOV9MIT_Node::YOLOV9MIT_Node(const rclcpp::NodeOptions &options) : Node("yolov9mit_ros", options)
 {
     // declare_parameter
-    const std::string param_prefix = "yolov9mit_ros/";
-    const auto model_path =
-        this->declare_parameter(param_prefix + "model_path", "yolov9mit_with_post.sim.engine");
-    const auto min_iou = this->declare_parameter(param_prefix + "min_iou", 0.5f);
-    const auto min_confidence = this->declare_parameter(param_prefix + "min_confidence", 0.6f);
-    const auto class_label_path = this->declare_parameter(param_prefix + "class_label_path", "");
-    const auto model_type = this->declare_parameter(param_prefix + "model_type", "tensorrt");
-    const auto tensorrt_device = this->declare_parameter(param_prefix + "tensorrt_device", 0);
-    const auto input_image_topic =
-        this->declare_parameter(param_prefix + "input_image_topic", "image_raw");
+    const auto model_path = this->declare_parameter("model_path", "v9-s.vec2box.sim.engine");
+    const auto min_iou = this->declare_parameter("min_iou", 0.5f);
+    const auto min_confidence = this->declare_parameter("min_confidence", 0.5f);
+    const auto class_label_path = this->declare_parameter(
+        "class_label_path",
+        ament_index_cpp::get_package_share_directory("yolov9mit_ros") + "/labels/coco_names.txt");
+    const auto model_type = this->declare_parameter("model_type", "tensorrt");
+    const auto tensorrt_device = this->declare_parameter("tensorrt_device", 0);
+    const auto input_image_topic = this->declare_parameter("input_image_topic", "image_raw");
     const auto output_image_topic =
-        this->declare_parameter(param_prefix + "output_image_topic", "yolov9mit_ros/image_raw");
-    const auto output_boundingbox_topic = this->declare_parameter(
-        param_prefix + "output_boundingbox_topic", "yolov9mit_ros/detections");
-    this->imshow_ = this->declare_parameter(param_prefix + "imshow", true);
+        this->declare_parameter("output_image_topic", "yolov9mit_ros/image_raw");
+    const auto output_boundingbox_topic =
+        this->declare_parameter("output_boundingbox_topic", "yolov9mit_ros/detections");
+    this->imshow_ = this->declare_parameter("imshow", false);
 
     // initialize pub/sub
     {
-        if (class_label_path != "")
+        if (class_label_path == "")
         {
-            this->class_names_ = yolov9mit::utils::read_class_labels(class_label_path);
+            std::string msg = "class_label_path is not set.";
+            throw std::runtime_error(msg);
         }
-        else
+        if (!std::filesystem::exists(class_label_path))
         {
-            this->class_names_ = yolov9mit::COCO_CLASSES;
+            std::string msg = "class_label_path[" + class_label_path + "] is not exist.";
+            throw std::runtime_error(msg);
         }
+        this->class_names_ = yolov9mit::utils::read_class_labels(class_label_path);
 
         this->pub_bboxes_ = this->create_publisher<vision_msgs::msg::Detection2DArray>(
             output_boundingbox_topic, 10);
@@ -48,7 +53,7 @@ YOLOV9MIT_Node::YOLOV9MIT_Node(const rclcpp::NodeOptions &options) : Node("yolov
 
         if (this->imshow_)
         {
-            cv::namedWindow("yolov9mit_ros", cv::WINDOW_AUTOSIZE);
+            cv::namedWindow(this->window_name_, cv::WINDOW_NORMAL);
         }
     }
 
@@ -89,7 +94,7 @@ void YOLOV9MIT_Node::image_callback(const sensor_msgs::msg::Image::ConstSharedPt
     this->pub_bboxes_->publish(*bboxes);
 
     auto t0_draw = std::chrono::system_clock::now();
-    yolov9mit::utils::draw_objects(image, objects);
+    yolov9mit::utils::draw_objects(image, objects, this->class_names_);
     auto t1_draw = std::chrono::system_clock::now();
     const auto pub_img_msg = cv_bridge::CvImage(msg->header, "bgr8", image).toImageMsg();
     this->pub_image_.publish(pub_img_msg);
@@ -117,7 +122,7 @@ void YOLOV9MIT_Node::image_callback(const sensor_msgs::msg::Image::ConstSharedPt
 
     if (this->imshow_)
     {
-        cv::imshow("yolov9mit_ros", image);
+        cv::imshow(this->window_name_, image);
     }
 }
 

@@ -6,7 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
-#include "coco_names.hpp"
+#include "color_list.hpp"
 #include "core.hpp"
 
 namespace yolov9mit
@@ -32,7 +32,7 @@ inline std::vector<std::string> read_class_labels(std::string file_name)
 }
 
 inline void draw_objects(cv::Mat bgr_image, const std::vector<Object>& objects,
-                         const std::vector<std::string>& class_names = COCO_CLASSES)
+                         const std::vector<std::string>& class_names)
 {
     const size_t COLOR_NUM = COLOR_LIST.size();
     for (const auto& obj : objects)

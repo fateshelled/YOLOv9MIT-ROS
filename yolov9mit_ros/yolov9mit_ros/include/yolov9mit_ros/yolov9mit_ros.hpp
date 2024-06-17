@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cv_bridge/cv_bridge.h>
-
 #include <chrono>
 #include <cmath>
 #include <image_transport/image_transport.hpp>
@@ -24,6 +22,7 @@ private:
     std::unique_ptr<yolov9mit::AbcYOLOV9MIT> yolo_;
     std::vector<std::string> class_names_;
     bool imshow_ = false;
+    const std::string window_name_ = "yolov9mit_ros";
 
     image_transport::Subscriber sub_image_;
     image_transport::Publisher pub_image_;
