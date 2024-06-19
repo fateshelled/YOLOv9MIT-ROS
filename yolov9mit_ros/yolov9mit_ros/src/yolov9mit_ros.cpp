@@ -175,7 +175,8 @@ vision_msgs::msg::Detection2DArray::SharedPtr YOLOV9MIT_Node::objects_to_bboxes(
         det.bbox.size_x = obj.rect.width;
         det.bbox.size_y = obj.rect.height;
         vision_msgs::msg::ObjectHypothesisWithPose hypothesis;
-        hypothesis.hypothesis.class_id = class_names_[obj.class_id];
+        hypothesis.hypothesis.class_id = std::to_string(obj.class_id);
+        hypothesis.hypothesis.score = (double)obj.confidence;
         det.results.push_back(hypothesis);
 
         msg->detections[i] = det;
