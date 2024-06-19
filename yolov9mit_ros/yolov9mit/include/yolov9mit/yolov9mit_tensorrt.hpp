@@ -16,8 +16,9 @@ using namespace nvinfer1;
 class YOLOV9MIT_TensorRT : public AbcYOLOV9MIT
 {
 public:
-    YOLOV9MIT_TensorRT(file_name_t engine_path, int32_t device = 0, float min_iou = 0.5f,
-                       float min_confidence = 0.5f, size_t num_classes = 80);
+    YOLOV9MIT_TensorRT(const std::string &engine_path, const int32_t device = 0,
+                       const float min_iou = 0.5f, const float min_confidence = 0.5f,
+                       const size_t num_classes = 80);
     ~YOLOV9MIT_TensorRT();
     std::vector<Object> inference(const cv::Mat &frame) override;
 

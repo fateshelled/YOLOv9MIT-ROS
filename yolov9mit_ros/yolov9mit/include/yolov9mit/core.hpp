@@ -6,10 +6,6 @@
 namespace yolov9mit
 {
 
-#define tcout std::cout
-#define file_name_t std::string
-#define imread_t cv::imread
-
 struct Object
 {
     cv::Rect2f rect;
@@ -26,7 +22,8 @@ class AbcYOLOV9MIT
 {
 public:
     AbcYOLOV9MIT() {}
-    AbcYOLOV9MIT(float min_iou = 0.45f, float min_confidence = 0.6f, size_t num_classes = 80)
+    AbcYOLOV9MIT(const float min_iou = 0.45f, const float min_confidence = 0.6f,
+                 const size_t num_classes = 80)
         : min_iou_(min_iou), min_confidence_(min_confidence), num_classes_(num_classes)
     {
     }
@@ -38,7 +35,7 @@ private:
 protected:
     int32_t input_w_;
     int32_t input_h_;
-    const int32_t input_channel_ = 3;
+    int32_t input_channel_;
     float min_iou_;
     float min_confidence_;
     size_t num_classes_;

@@ -26,8 +26,9 @@ static inline void cuda_check(cudaError_t status)
     }
 }
 
-YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int32_t device, float min_iou,
-                                       float min_confidence, size_t num_classes)
+YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(const std::string& engine_path, const int32_t device,
+                                       const float min_iou, const float min_confidence,
+                                       const size_t num_classes)
     : AbcYOLOV9MIT(min_iou, min_confidence, num_classes), device_(device)
 {
     cudaSetDevice(this->device_);
@@ -70,6 +71,7 @@ YOLOV9MIT_TensorRT::YOLOV9MIT_TensorRT(file_name_t engine_path, int32_t device, 
     assert(this->engine_->getTensorDataType(output1_name) == nvinfer1::DataType::kFLOAT);
 
     const auto input_dims = this->engine_->getTensorShape(input_name);
+    this->input_channel_ = input_dims.d[1];
     this->input_h_ = input_dims.d[2];
     this->input_w_ = input_dims.d[3];
 
